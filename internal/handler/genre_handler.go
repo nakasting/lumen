@@ -6,6 +6,7 @@ import (
 	"lumen/internal/dto"
 	"lumen/internal/service"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -31,8 +32,10 @@ func NewGenreHandler(s service.GenreService, v *validator.Validate, l *zap.Logge
 func (h *Genrehandler) RegisterRoutes(r chi.Router) {
 	r.Get("/", h.GetGenres)
 	r.Post("/", h.CreateGenre)
+	r.Put("/{id}", h.UpdateGenre)
 }
 
+/* ###################################################################################### */
 func (h *Genrehandler) GetGenres(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
@@ -57,21 +60,15 @@ func (h *Genrehandler) GetGenres(w http.ResponseWriter, r *http.Request) {
 
 }
 
+/* ###################################################################################### */
 func (h *Genrehandler) CreateGenre(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var genreReq dto.GenreReq
 
 	if err := json.NewDecoder(r.Body).Decode(&genreReq); err != nil {
-		h.logger.Warn("Error decode body request", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(dto.ErrorRes{
-			Errors: []dto.ErrorField{
-				dto.ErrorField{
-					Field: "body",
-					Error: "Error decode body",
-				},
-			},
-		})
+		h.logger.Warn("Error decode request", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(dto.ErrorResponse{Message: "Error internal server"})
 		return
 	}
 
@@ -140,4 +137,59 @@ func (h *Genrehandler) CreateGenre(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(res)
+}
+
+/* ###################################################################################### */
+func (h *Genrehandler) UpdateGenre(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	id := chi.URLParam(r, "id")
+
+	var genreReq dto.GenreReq
+
+	if err := json.NewDecoder(r.Body).Decode(&genreReq); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(dto.ErrorRes{
+			Errors: []dto.ErrorField{
+				dto.ErrorField{
+					Field: "body",
+					Error: "Cannot decode request",
+				},
+			},
+		})
+		return
+	}
+
+	genreId, err := strconv.Atoi(id)
+	if err != nil {
+		h.logger.Error("Invalid param", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(dto.ErrorRes{
+			Errors: []dto.ErrorField{
+				dto.ErrorField{
+					Field: "url",
+					Error: "Invalid param",
+				},
+			},
+		})
+		return
+	}
+
+	genreRes, err := h.service.Update(uint(genreId), &genreReq)
+
+	if err != nil {
+		h.logger.Warn("Cannot update model", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(dto.ErrorRes{
+			Errors: []dto.ErrorField{
+				dto.ErrorField{
+					Field: "body",
+					Error: "Error internal server",
+				},
+			},
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(genreRes)
 }

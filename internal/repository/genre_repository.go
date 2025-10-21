@@ -10,7 +10,7 @@ type GenreRepo interface {
 	Create(genre *model.Genre) error
 	FindAll() ([]model.Genre, error)
 	Update(genre *model.Genre) error
-
+	FindByID(id uint) (*model.Genre, error)
 	ExistsBySlug(slug string, id uint) (bool, error)
 }
 
@@ -24,10 +24,20 @@ func NewGenreRepo(db *gorm.DB) GenreRepo {
 
 func (r *genreRepo) FindAll() ([]model.Genre, error) {
 	var genres []model.Genre
+
 	if err := r.db.Find(&genres).Error; err != nil {
 		return nil, err
 	}
 	return genres, nil
+}
+
+func (r *genreRepo) FindByID(id uint) (*model.Genre, error) {
+	var genre *model.Genre
+
+	if err := r.db.First(&genre, id).Error; err != nil {
+		return nil, err
+	}
+	return genre, nil
 }
 
 func (r *genreRepo) Create(genre *model.Genre) error {
@@ -41,7 +51,6 @@ func (r *genreRepo) Update(genre *model.Genre) error {
 	if err := r.db.Save(&genre).Error; err != nil {
 		return err
 	}
-
 	return nil
 }
 

@@ -10,6 +10,7 @@ import (
 type GenreService interface {
 	FindAll() ([]dto.GenreRes, error)
 	Create(genreReq *dto.GenreReq) (*dto.GenreRes, error)
+	Update(id uint, genreReq *dto.GenreReq) (*dto.GenreRes, error)
 	Exists(genreReq *dto.GenreReq, id uint) (bool, error)
 }
 
@@ -52,6 +53,24 @@ func (s *genreService) Create(genreReq *dto.GenreReq) (*dto.GenreRes, error) {
 	genreRes := dto.ToGenreRes(&newGenre)
 
 	return &genreRes, nil
+}
+
+func (s *genreService) Update(id uint, genreReq *dto.GenreReq) (*dto.GenreRes, error) {
+	genre, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	slug := utils.GenerateSlug(genreReq.Name)
+	genre.Name = genreReq.Name
+	genre.Slug = slug
+
+	if err := s.repo.Update(genre); err != nil {
+		return nil, err
+	}
+
+	genreResponse := dto.ToGenreRes(genre)
+	return &genreResponse, nil
 }
 
 func (s *genreService) Exists(genreReq *dto.GenreReq, id uint) (bool, error) {
