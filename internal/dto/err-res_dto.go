@@ -1,25 +1,26 @@
 package dto
 
 type ErrorResponse struct {
-	Message string `json:"errors"`
+	Message string `json:"message"`
 }
 
-type ValidationError struct {
+func NewErrorResponse(message string) *ErrorResponse {
+	return &ErrorResponse{message}
+}
+
+type ValidationErrors struct {
+	Errors []FieldError `json:"errors"`
+}
+
+func NewValidationErrors(fieldErrors []FieldError) *ValidationErrors {
+	return &ValidationErrors{Errors: fieldErrors}
+}
+
+type FieldError struct {
 	Field string `json:"field"`
 	Error string `json:"error"`
 }
 
-type ErrorRes struct {
-	Errors []ErrorField `json:"errors"`
-}
-
-type ErrorField struct {
-	Field string `json:"field"`
-	Error string `json:"error"`
-}
-
-func NewErrorRes(fields []ErrorField) *ErrorRes {
-	return &ErrorRes{
-		Errors: fields,
-	}
+func NewFieldError(field string, error string) *FieldError {
+	return &FieldError{field, error}
 }
