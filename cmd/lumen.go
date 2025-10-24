@@ -11,6 +11,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 )
@@ -39,6 +40,8 @@ func main() {
 	h := handler.NewGenreHandler(service, validate, logger)
 
 	r := chi.NewRouter()
+	r.Use(middleware.AllowContentType("application/json"))
+	r.Use(handler.JSONContentType)
 	r.Route("/api/genres", h.RegisterRoutes)
 
 	addr := fmt.Sprintf(":%s", cfg.Port)
