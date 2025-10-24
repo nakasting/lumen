@@ -10,8 +10,10 @@ import (
 type GenreService interface {
 	FindAll() ([]dto.GenreRes, error)
 	Create(genreReq *dto.GenreReq) (*dto.GenreRes, error)
-	Update(id uint, genreReq *dto.GenreReq) (*dto.GenreRes, error)
-	Exists(genreReq *dto.GenreReq, id uint) (bool, error)
+	FindByID(id string) (*dto.GenreRes, error)
+	Update(id string, genreReq *dto.GenreReq) (*dto.GenreRes, error)
+	Exists(genreReq *dto.GenreReq, id string) (bool, error)
+	ExistsByID(id string) (bool, error)
 }
 
 type genreService struct {
@@ -38,6 +40,17 @@ func (s *genreService) FindAll() ([]dto.GenreRes, error) {
 	return genreResponses, nil
 }
 
+func (s *genreService) FindByID(id string) (*dto.GenreRes, error) {
+	genre, err := s.repo.FindByID(id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	genreResponse := dto.ToGenreRes(genre)
+	return &genreResponse, nil
+}
+
 func (s *genreService) Create(genreReq *dto.GenreReq) (*dto.GenreRes, error) {
 	slug := utils.GenerateSlug(genreReq.Name)
 
@@ -55,7 +68,7 @@ func (s *genreService) Create(genreReq *dto.GenreReq) (*dto.GenreRes, error) {
 	return &genreRes, nil
 }
 
-func (s *genreService) Update(id uint, genreReq *dto.GenreReq) (*dto.GenreRes, error) {
+func (s *genreService) Update(id string, genreReq *dto.GenreReq) (*dto.GenreRes, error) {
 	genre, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
@@ -73,11 +86,21 @@ func (s *genreService) Update(id uint, genreReq *dto.GenreReq) (*dto.GenreRes, e
 	return &genreResponse, nil
 }
 
-func (s *genreService) Exists(genreReq *dto.GenreReq, id uint) (bool, error) {
+func (s *genreService) Exists(genreReq *dto.GenreReq, id string) (bool, error) {
 
 	slug := utils.GenerateSlug(genreReq.Name)
 
 	exists, err := s.repo.ExistsBySlug(slug, id)
+
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
+func (s *genreService) ExistsByID(id string) (bool, error) {
+	exists, err := s.repo.ExistsByID(id)
 
 	if err != nil {
 		return false, err

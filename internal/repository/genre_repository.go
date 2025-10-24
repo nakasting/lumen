@@ -10,8 +10,9 @@ type GenreRepo interface {
 	Create(genre *model.Genre) error
 	FindAll() ([]model.Genre, error)
 	Update(genre *model.Genre) error
-	FindByID(id uint) (*model.Genre, error)
-	ExistsBySlug(slug string, id uint) (bool, error)
+	FindByID(id string) (*model.Genre, error)
+	ExistsBySlug(slug string, id string) (bool, error)
+	ExistsByID(id string) (bool, error)
 }
 
 type genreRepo struct {
@@ -31,7 +32,7 @@ func (r *genreRepo) FindAll() ([]model.Genre, error) {
 	return genres, nil
 }
 
-func (r *genreRepo) FindByID(id uint) (*model.Genre, error) {
+func (r *genreRepo) FindByID(id string) (*model.Genre, error) {
 	var genre *model.Genre
 
 	if err := r.db.First(&genre, id).Error; err != nil {
@@ -54,10 +55,10 @@ func (r *genreRepo) Update(genre *model.Genre) error {
 	return nil
 }
 
-func (r *genreRepo) ExistsBySlug(slug string, id uint) (bool, error) {
+func (r *genreRepo) ExistsBySlug(slug string, id string) (bool, error) {
 	var count int64
 
-	if id == 0 {
+	if id == "" {
 		if err := r.db.Model(&model.Genre{}).Where("slug = ?", slug).Count(&count).Error; err != nil {
 			return false, err
 		}
@@ -66,5 +67,15 @@ func (r *genreRepo) ExistsBySlug(slug string, id uint) (bool, error) {
 			return false, err
 		}
 	}
+	return count > 0, nil
+}
+
+func (r *genreRepo) ExistsByID(id string) (bool, error) {
+	var count int64
+
+	if err := r.db.Model(&model.Genre{}).Where("id = ?", id).Count(&count).Error; err != nil {
+		return false, err
+	}
+
 	return count > 0, nil
 }
